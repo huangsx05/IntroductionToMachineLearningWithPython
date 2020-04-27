@@ -1,0 +1,115 @@
+import numpy as np
+import mglearn
+import matplotlib.pyplot as plt
+from mglearn.datasets import make_blobs
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import f1_score
+from sklearn.metrics import average_precision_score
+from sklearn.metrics import roc_curve
+
+X, y = make_blobs(n_samples=(400, 50), centers=2, cluster_std=[7.0, 2],
+				random_state=22)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+svc = SVC(gamma=.05).fit(X_train, y_train)
+
+print(classification_report(y_test, svc.predict(X_test)))
+
+# we can adjust the predictions to focus on a higher recall of class 1 by
+# changing the decision threshold away from 0
+y_pred_lower_threshold = svc.decision_function(X_test) > -.8
+print(classification_report(y_test, y_pred_lower_threshold))
+
+# precision-recall curve
+precision, recall, thresholds = precision_recall_curve(
+	y_test, svc.decision_function(X_test))
+
+# Use more data points for a smoother curve
+X, y = make_blobs(n_samples=(4000, 500), centers=2, cluster_std=[7.0, 2],
+					random_state=22)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+svc = SVC(gamma=.05).fit(X_train, y_train)
+
+precision, recall, thresholds = precision_recall_curve(
+	y_test, svc.decision_function(X_test))
+#print(precision.shape) 
+
+# find threshold closest to zero
+close_zero = np.argmin(np.abs(thresholds)) #找到最小threshold的位置 （也就是default threshold)
+plt.plot(precision[close_zero], recall[close_zero], 'o', markersize=10,
+		label="threshold zero", fillstyle="none", c='k', mew=2) #在相应位置画个圈
+plt.plot(precision, recall, label="precision recall curve")
+plt.xlabel("Precision")
+plt.ylabel("Recall")
+plt.show()
+
+## compare SVC with random tree
+rf = RandomForestClassifier(n_estimators=100, random_state=0, max_features=2)
+rf.fit(X_train, y_train)
+
+# RandomForestClassifier has predict_proba, but not decision_function
+precision_rf, recall_rf, thresholds_rf = precision_recall_curve(
+	y_test, rf.predict_proba(X_test)[:, 1])
+plt.plot(precision, recall, label="svc")
+plt.plot(precision[close_zero], recall[close_zero], 'o', markersize=10,
+		label="threshold zero svc", fillstyle="none", c='k', mew=2)
+
+plt.plot(precision_rf, recall_rf, label="rf")
+close_default_rf = np.argmin(np.abs(thresholds_rf - 0.5))
+plt.plot(precision_rf[close_default_rf], recall_rf[close_default_rf], '^', c='k',
+		markersize=10, label="threshold 0.5 rf", fillstyle="none", mew=2)
+plt.xlabel("Precision")
+plt.ylabel("Recall")
+plt.legend(loc="best")
+plt.show()
+
+# print f1 scores
+print("f1_score of random forest: {:.3f}".format(
+	f1_score(y_test, rf.predict(X_test))))
+print("f1_score of svc: {:.3f}".format(f1_score(y_test, svc.predict(X_test))))
+
+# compute the average precision
+ap_rf = average_precision_score(y_test, rf.predict_proba(X_test)[:, 1])
+ap_svc = average_precision_score(y_test, svc.decision_function(X_test))
+print("Average precision of random forest: {:.3f}".format(ap_rf))
+print("Average precision of svc: {:.3f}".format(ap_svc))
+
+# plot roc curve
+fpr, tpr, thresholds = roc_curve(y_test, svc.decision_function(X_test))
+plt.plot(fpr, tpr, label="ROC Curve")
+plt.xlabel("FPR")
+plt.ylabel("TPR (recall)")
+# find threshold closest to zero
+close_zero = np.argmin(np.abs(thresholds))
+plt.plot(fpr[close_zero], tpr[close_zero], 'o', markersize=10,
+	label="threshold zero", fillstyle="none", c='k', mew=2)
+plt.legend(loc=4)
+plt.show()
+
+# comparison of the random forest and the SVM using ROC curves
+fpr_rf, tpr_rf, thresholds_rf = roc_curve(y_test, rf.predict_proba(X_test)[:, 1])
+plt.plot(fpr, tpr, label="ROC Curve SVC")
+plt.plot(fpr_rf, tpr_rf, label="ROC Curve RF")
+plt.xlabel("FPR")
+plt.ylabel("TPR (recall)")
+plt.plot(fpr[close_zero], tpr[close_zero], 'o', markersize=10,
+	label="threshold zero SVC", fillstyle="none", c='k', mew=2)
+close_default_rf = np.argmin(np.abs(thresholds_rf - 0.5))
+plt.plot(fpr_rf[close_default_rf], tpr[close_default_rf], '^', markersize=10,
+	label="threshold 0.5 RF", fillstyle="none", c='k', mew=2)
+plt.legend(loc=4)
+plt.show()
+
+# compute roc_auc score
+from sklearn.metrics import roc_auc_score
+rf_auc = roc_auc_score(y_test, rf.predict_proba(X_test)[:, 1])
+svc_auc = roc_auc_score(y_test, svc.decision_function(X_test))
+print("AUC for Random Forest: {:.3f}".format(rf_auc))
+print("AUC for SVC: {:.3f}".format(svc_auc))
