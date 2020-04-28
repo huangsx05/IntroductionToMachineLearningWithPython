@@ -1,0 +1,49 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+
+# load dataset
+from sklearn.datasets import load_breast_cancer
+cancer = load_breast_cancer()
+
+# split data
+X_train, X_test, y_train, y_test = train_test_split(
+	cancer.data, cancer.target, stratify=cancer.target, random_state=42)
+
+## Unpruned tree
+# train - build classifier
+tree = DecisionTreeClassifier(random_state=0) # random_state is used for tiebreaking
+tree.fit(X_train, y_train)
+# test and evaluate
+print("Accuracy on training set: {:.3f}".format(tree.score(X_train, y_train))) #100%, means fully developed tree
+print("Accuracy on test set: {:.3f}".format(tree.score(X_test, y_test)))
+
+## prepruned tree - max depth
+tree = DecisionTreeClassifier(max_depth=4, random_state=0)
+tree.fit(X_train, y_train)
+print("Accuracy on training set: {:.3f}".format(tree.score(X_train, y_train)))
+print("Accuracy on test set: {:.3f}".format(tree.score(X_test, y_test)))
+
+# Visualize the tree - writes the tree.dot file
+from sklearn.tree import export_graphviz
+export_graphviz(tree, out_file="tree.dot", class_names=["malignant", "benign"],
+				feature_names=cancer.feature_names, impurity=False, filled=True)
+# Visualize the tree - reads the tree.dot file
+import graphviz
+with open("tree.dot") as f:
+	dot_graph = f.read()
+graphviz.Source(dot_graph)
+
+# feature importance - print and plot
+print("Feature importances:\n{}".format(tree.feature_importances_))
+
+def plot_feature_importances_cancer(model):
+	n_features = cancer.data.shape[1]
+	plt.barh(range(n_features), model.feature_importances_, align='center')
+	plt.yticks(np.arange(n_features), cancer.feature_names)
+	plt.xlabel("Feature importance")
+	plt.ylabel("Feature")
+	plt.show()
+
+plot_feature_importances_cancer(tree)
