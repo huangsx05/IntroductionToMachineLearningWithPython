@@ -1,0 +1,47 @@
+#3 classes (one-va-rest), 2 features, Linear SVMs
+import numpy as np
+import mglearn
+import matplotlib.pyplot as plt
+from sklearn.svm import LinearSVC
+
+# load and overview data
+from sklearn.datasets import make_blobs
+X, y = make_blobs(random_state=42)
+print("Shape of X: {}".format(X.shape))  
+mglearn.discrete_scatter(X[:, 0], X[:, 1], y)
+plt.xlabel("Feature 0")
+plt.ylabel("Feature 1")
+plt.legend(["Class 0", "Class 1", "Class 2"])
+plt.show()
+
+# build Linear SVMs classifier (one vs rest)
+linear_svm = LinearSVC().fit(X, y)
+print("Coefficient shape: ", linear_svm.coef_.shape) # (3,2): 3 classes, 2 features
+print("Intercept shape: ", linear_svm.intercept_.shape)
+
+# visualize the lines given by the 3 binary classifiers
+mglearn.discrete_scatter(X[:, 0], X[:, 1], y)
+line = np.linspace(-15, 15)
+for coef, intercept, color in zip(linear_svm.coef_, linear_svm.intercept_,
+									['b', 'r', 'g']):
+	plt.plot(line, -(line * coef[0] + intercept) / coef[1], c=color)
+plt.ylim(-10, 15)
+plt.xlim(-10, 8)
+plt.xlabel("Feature 0")
+plt.ylabel("Feature 1")
+plt.legend(['Class 0', 'Class 1', 'Class 2', 'Line class 0', 'Line class 1',
+			'Line class 2'], loc=(1.01, 0.3))
+plt.show()
+
+# shows the predictions for all regions of the 2D space
+mglearn.plots.plot_2d_classification(linear_svm, X, fill=True, alpha=.7)
+mglearn.discrete_scatter(X[:, 0], X[:, 1], y)
+line = np.linspace(-15, 15)
+for coef, intercept, color in zip(linear_svm.coef_, linear_svm.intercept_,
+									['b', 'r', 'g']):
+	plt.plot(line, -(line * coef[0] + intercept) / coef[1], c=color)
+plt.legend(['Class 0', 'Class 1', 'Class 2', 'Line class 0', 'Line class 1',
+			'Line class 2'], loc=(1.01, 0.3))
+plt.xlabel("Feature 0")
+plt.ylabel("Feature 1")
+plt.show()
