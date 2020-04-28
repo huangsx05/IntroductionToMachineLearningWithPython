@@ -1,0 +1,33 @@
+###Linear regression, single feature, underfitting
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import mglearn
+
+### Load Dataset
+X, y = mglearn.datasets.make_wave(n_samples=60)
+plt.plot(X, y, 'o')
+plt.ylim(-3, 3)
+plt.xlabel("Feature")
+plt.ylabel("Target")
+plt.show()
+
+### 展示工作原理
+mglearn.plots.plot_linear_regression_wave()
+plt.show()
+
+### split data
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
+
+### train - build model
+from sklearn.linear_model import LinearRegression
+lr = LinearRegression().fit(X_train, y_train)
+
+print("lr.coef_: {}".format(lr.coef_)) # w: weight / coefficient - array
+print("lr.intercept_: {}".format(lr.intercept_)) # b: interception - float number
+
+### evaluate
+print("Training set score: {:.2f}".format(lr.score(X_train, y_train)))
+print("Test set score: {:.2f}".format(lr.score(X_test, y_test)))
