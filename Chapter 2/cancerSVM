@@ -1,0 +1,55 @@
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+
+
+from sklearn.datasets import load_breast_cancer
+cancer = load_breast_cancer()
+
+X_train, X_test, y_train, y_test = train_test_split(
+	cancer.data, cancer.target, random_state=0)
+
+svc = SVC()
+svc.fit(X_train, y_train)
+
+print("Accuracy on training set: {:.2f}".format(svc.score(X_train, y_train)))
+print("Accuracy on test set: {:.2f}".format(svc.score(X_test, y_test)))
+
+## study: look at the minimum and maximum values for each feature
+plt.plot(X_train.min(axis=0), 'o', label="min")
+plt.plot(X_train.max(axis=0), '^', label="max")
+plt.legend(loc=4)
+plt.xlabel("Feature index")
+plt.ylabel("Feature magnitude")
+plt.yscale("log") # plotted in log-space
+plt.show()
+
+## (or use MinMaxScaler) scale all features to be between 0 and 1
+# compute the minimum value per feature on the training set
+min_on_training = X_train.min(axis=0) # axis = 0 :按列找min
+#print(min_on_training.shape)
+# compute the range of each feature (max - min) on the training set
+range_on_training = (X_train - min_on_training).max(axis=0) #一维向量
+#print(range_on_training.shape)
+# subtract the min, and divide by range
+# afterward, min=0 and max=1 for each feature
+X_train_scaled = (X_train - min_on_training) / range_on_training
+print("Minimum for each feature\n{}".format(X_train_scaled.min(axis=0))) # 0
+print("Maximum for each feature\n {}".format(X_train_scaled.max(axis=0))) # 1
+# use THE SAME transformation on the test set,
+# using min and range of the training set (see Chapter 3 for details)
+X_test_scaled = (X_test - min_on_training) / range_on_training
+
+## train with scaled features (underfit)
+svc = SVC()
+svc.fit(X_train_scaled, y_train)
+print("Accuracy on training set: {:.3f}".format(
+	svc.score(X_train_scaled, y_train)))
+print("Accuracy on test set: {:.3f}".format(svc.score(X_test_scaled, y_test)))
+
+# try increase C to solve underfit
+svc = SVC(C=1000)
+svc.fit(X_train_scaled, y_train)
+print("Accuracy on training set: {:.3f}".format(
+	svc.score(X_train_scaled, y_train)))
+print("Accuracy on test set: {:.3f}".format(svc.score(X_test_scaled, y_test)))
